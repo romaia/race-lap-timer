@@ -1,6 +1,6 @@
 CREATE TABLE race (
     id integer primary key autoincrement,
-    description text,
+    name text,
     start_time text,
     end_time text
 );
@@ -8,7 +8,7 @@ CREATE TABLE race (
 CREATE TABLE category (
     id integer primary key autoincrement,
     short_name text,
-    description  text,
+    name  text,
     total_laps integer,
     race_id integer
 );

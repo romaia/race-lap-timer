@@ -207,7 +207,7 @@
             <property name="border_width">6</property>
             <property name="spacing">6</property>
             <child>
-              <object class="ObjectList" id="racers">
+              <object class="ObjectTree" id="racers">
                 <property name="visible">True</property>
               </object>
               <packing>
@@ -382,39 +382,10 @@
           </packing>
         </child>
         <child>
-          <object class="GtkVBox" id="vbox3">
-            <property name="visible">True</property>
-            <child>
-              <placeholder/>
-            </child>
-            <child>
-              <object class="GtkLabel" id="label7">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">Results</property>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-            <child>
-              <placeholder/>
-            </child>
-          </object>
-          <packing>
-            <property name="position">2</property>
-          </packing>
+          <placeholder/>
         </child>
         <child type="tab">
-          <object class="GtkLabel" id="label3">
-            <property name="visible">True</property>
-            <property name="label" translatable="yes">Classificação</property>
-          </object>
-          <packing>
-            <property name="position">2</property>
-            <property name="tab_fill">False</property>
-          </packing>
+          <placeholder/>
         </child>
       </object>
     </child>

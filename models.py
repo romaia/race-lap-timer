@@ -27,7 +27,7 @@ class Race(Storm):
     __storm_table__ = 'race'
 
     id = Int(primary=True, default=AutoReload)
-    description = Unicode()
+    name = Unicode()
     start_time = DateTime()
     end_time = DateTime()
 
@@ -55,10 +55,14 @@ class Category(Storm):
 
     id = Int(primary=True, default=AutoReload)
     short_name = Unicode()
-    description = Unicode()
+    name = Unicode()
     total_laps = Int()
     race_id = Int()
     race = Reference(race_id, 'Race.id')
+
+    # FIXME: workarount for treeview sorting
+    number = None
+    total_time = None
 
     def update(self):
         self._complete_laps = None
@@ -93,11 +97,19 @@ class Racer(Storm):
     race_id = Int()
     race = Reference(race_id, 'Race.id')
 
+    def update(self):
+        self._complete_laps = None
+        self._last_lap = -1
+
     @property
     def last_lap(self):
+        if hasattr(self, '_last_lap') and self._last_lap != -1:
+            return self._last_lap
+
         store = Store.of(self)
         query = (RacerLap.racer_id == self.id)
-        return store.find(RacerLap, query).order_by(RacerLap.event_time).last()
+        self._last_lap = store.find(RacerLap, query).order_by(RacerLap.event_time).last()
+        return self._last_lap
 
     @property
     def is_finished(self):
@@ -106,9 +118,25 @@ class Racer(Storm):
             return False
         return last_lap.remaining_laps == 0
 
+    @property
+    def completed_laps(self):
+        if hasattr(self, '_complete_laps') and self._complete_laps is not None:
+            return self._complete_laps
+
+        self._complete_laps = self.get_laps().count()
+        return self._complete_laps
+
+    @property
+    def total_time(self):
+        last = self.last_lap
+        if not last:
+            return None
+        delta = last.event_time - self.race.start_time
+        return str(datetime.timedelta(seconds=delta.seconds))
+
     @cached_property
     def category_str(self):
-        return self.category.description
+        return self.category.name
 
     def add_lap(self):
         lap = RacerLap()

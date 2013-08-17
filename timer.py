@@ -17,9 +17,9 @@ from storm.store import Store
 
 from models import Racer, RacerLap, Category, Race
 
-# import sys
-# from storm.tracer import debug
-# debug(True, stream=sys.stdout)
+import sys
+from storm.tracer import debug
+debug(True, stream=sys.stdout)
 
 
 CATEGORIES = {
@@ -72,7 +72,7 @@ class Form(GladeDelegate):
             return race
 
         race = Race()
-        race.description = u'First race ever'
+        race.name = u'First race ever'
         self.store.add(race)
         self.store.commit()
         return race
@@ -86,7 +86,7 @@ class Form(GladeDelegate):
             cat = Category()
             cat.race = self.race
             cat.short_name = short
-            cat.description = name
+            cat.name = name
             cat.total_laps = CATEGORIES_LAPS[short]
             self.store.add(cat)
 
@@ -107,17 +107,21 @@ class Form(GladeDelegate):
         self.hpaned1.set_position(550)
 
         # Categores
-        options = sorted([(c.description, c) for c in self.race.get_categories()])
+        options = sorted([(c.name, c) for c in self.race.get_categories()])
         self.category.prefill(options)
 
         # Lists
-        self.racers.set_columns([Column('number', title='Número', data_type=int, sorted=True),
-                                 Column('name', title="Nome", expand=True, data_type=str),
-                                 Column('category_str', title="Categoria", data_type=str)])
+        self.racers.set_columns([
+            Column('name', title="Nome", expand=True, data_type=str, sorted=True),
+            Column('number', title='Número', data_type=int),
+            Column('completed_laps', title='Voltas', data_type=int),
+            Column('total_time', title='Tempo', data_type=str),
+            # Column('category_str', title="Categoria", data_type=str)
+        ])
 
         self.categories.set_columns([
             Column('short_name', title="Cat", data_type=str, sorted=True),
-            Column('description', title="Category", data_type=str, expand=True),
+            Column('name', title="Category", data_type=str, expand=True),
             Column('completed_laps', title="Comp", data_type=int),
             Column('total_laps', title="Total", data_type=int)])
 
@@ -132,7 +136,12 @@ class Form(GladeDelegate):
                               Column('remaining_laps', title="Falta", data_type=int),
                               ])
 
-        self.racers.extend(self.store.find(Racer))
+        for category in self.race.get_categories():
+            self.racers.append(None, category)
+        for racer in self.store.find(Racer):
+            self.racers.append(racer.category, racer)
+            self.racers.expand(racer.category)
+
         self.log.extend(self.store.find(RacerLap))
         self.categories.extend(self.store.find(Category))
 
@@ -214,8 +223,9 @@ class Form(GladeDelegate):
         lap = racer.add_lap()
         self.log.append(lap)
 
-        # We need to recalculate the number of laps in the category
+        # We need to recalculate the number of laps
         racer.category.update()
+        racer.update()
 
         # Update the categories list.
         self.categories.refresh(racer.category)
@@ -236,6 +246,8 @@ class Form(GladeDelegate):
         self.racer_field.set_sensitive(False)
         self.racers.refresh()
         self.store.commit()
+
+        self.racers.flush()
 
     #
     # Callbacks
@@ -261,13 +273,15 @@ class Form(GladeDelegate):
         widget.set_text('')
 
     def on_racers__row_activated(self, widget, row):
-        self.edit_racer(row)
+        if isinstance(row, Racer):
+            self.edit_racer(row)
 
     def on_new_button__clicked(self, button):
         racer = Racer()
         racer.category = self.category.get_selected()
         racer.race = self.race
-        self.racers.append(racer)
+
+        self.racers.append(racer.category, racer, select=True)
         self.edit_racer(racer)
 
     def on_save_button__clicked(self, button):
