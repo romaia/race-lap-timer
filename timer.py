@@ -349,6 +349,19 @@ class Form(GladeDelegate):
         if self.store.find(Racer, query).any():
             return ValidationError('Número já utilizado')
 
+    def on_remove_log_button__clicked(self, button):
+        log = self.log.get_selected()
+        racer = log.racer
+
+        self.log.remove(log)
+        self.store.remove(log)
+        self.store.commit()
+
+        # We need to recalculate the number of laps
+        racer.category.update()
+        racer.update()
+        self.categories.refresh(racer.category)
+
 
 if __name__ == "__main__":
     window = Form()
