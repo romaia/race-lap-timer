@@ -9,11 +9,13 @@ import gtk
 import gobject
 import pango
 
+from kiwi.datatypes import ValidationError
 from kiwi.ui.delegates import GladeDelegate, ProxyDelegate
 from kiwi.ui.forms import TextField, IntegerField, ChoiceField
 from kiwi.ui.objectlist import Column  # , ObjectList
 
 from storm.database import create_database
+from storm.expr import And
 from storm.store import Store
 
 from models import Racer, RacerLap, Category, Race
@@ -27,18 +29,20 @@ CATEGORIES = {
     u'EM': u'Estreante Masculino',
     u'EF': u'Estreante Feminino',
     u'EJ': u'Estreante Sub18',
+    u'DM': u'Dupla Mista',
     u'PF': u'Pro Feminino',
     u'PJ': u'Pro Junior',
     u'P25': u'Pro Sub25',
     u'P35': u'Pro Sub35',
     u'P45': u'Pro Sub45',
-    u'P55': u'Pro Sub55',
+    u'P55': u'Pro Veteranos',
 }
 
 CATEGORIES_LAPS = {
     u'EM': 4,
     u'EF': 4,
     u'EJ': 6,
+    u'DM': 6,
     u'PF': 6,
     u'PJ': 8,
     u'P25': 8,
@@ -72,9 +76,12 @@ class Form(GladeDelegate):
         self.race = self._check_race()
         self.race_proxy = self.add_proxy(self.race, self.race_widgets)
 
+        self.register_validate_function(self._validation_changed)
         self._check_categories()
-
         self.setup_widgets()
+
+    def _validation_changed(self, valid):
+        self.save_button.set_sensitive(valid)
 
     def _check_race(self):
         race = self.store.find(Race).one()
@@ -103,6 +110,7 @@ class Form(GladeDelegate):
         self.store.commit()
 
     def setup_widgets(self):
+        self.save_button.set_sensitive(False)
         self.racer_field.set_sensitive(False)
         if not self.race.start_time:
             self.lap_number.set_sensitive(False)
@@ -278,19 +286,21 @@ class Form(GladeDelegate):
         if not self.proxy:
             self.proxy = self.add_proxy(racer, self.widgets)
         self.proxy.set_model(racer)
+        self.save_button.set_sensitive(True)
 
     def save_racer(self):
         racer = self._current_model
         self.store.add(racer)
+        self.racers.expand(racer.category)
         if self._is_new:
             self.racers.append(racer.category, racer, select=True)
 
         self.proxy.set_model(None)
         self.racer_field.set_sensitive(False)
+        self.save_button.set_sensitive(False)
         self.racers.refresh()
         self.store.commit()
 
-        self.racers.flush()
         self._current_model = None
 
     #
@@ -331,6 +341,13 @@ class Form(GladeDelegate):
 
     def on_save_button__clicked(self, button):
         self.save_racer()
+
+    def on_number__validate(self, widget, value):
+        query = And(Racer.race == self.race,
+                    Racer.id != self._current_model.id,
+                    Racer.number == value)
+        if self.store.find(Racer, query).any():
+            return ValidationError('Número já utilizado')
 
 
 if __name__ == "__main__":
