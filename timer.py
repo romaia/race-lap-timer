@@ -12,7 +12,8 @@ import pango
 from kiwi.datatypes import ValidationError
 from kiwi.ui.delegates import GladeDelegate, ProxyDelegate
 from kiwi.ui.forms import TextField, IntegerField, ChoiceField
-from kiwi.ui.objectlist import Column  # , ObjectList
+from kiwi.ui.objectlist import Column
+from kiwi.ui.dialogs import yesno
 
 from storm.database import create_database
 from storm.expr import And
@@ -132,7 +133,7 @@ class Form(GladeDelegate):
         self.racers.set_columns([
             Column('name', title="Nome", data_type=str, sorted=True),
             Column('number', title='Número', data_type=int),
-            Column('completed_laps', title='Voltas', data_type=int),
+            Column('completed_laps', title='Completas', data_type=int),
             Column('total_time', title='Tempo', data_type=str),
             # Column('category_str', title="Categoria", data_type=str)
         ])
@@ -350,6 +351,15 @@ class Form(GladeDelegate):
             return ValidationError('Número já utilizado')
 
     def on_remove_log_button__clicked(self, button):
+        parent = self.get_toplevel().get_toplevel()
+        response = yesno('Deseja remover?',
+                         parent=parent,
+                         default=False,
+                         buttons=((gtk.STOCK_YES, True),
+                                  (gtk.STOCK_NO, False)))
+        if not response:
+            return
+
         log = self.log.get_selected()
         racer = log.racer
 
