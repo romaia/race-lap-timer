@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
 import datetime
 
 import pygtk
@@ -11,7 +10,6 @@ import pango
 
 from kiwi.datatypes import ValidationError
 from kiwi.ui.delegates import GladeDelegate, ProxyDelegate
-from kiwi.ui.forms import TextField, IntegerField, ChoiceField
 from kiwi.ui.objectlist import Column
 from kiwi.ui.dialogs import yesno
 
@@ -51,15 +49,6 @@ CATEGORIES_LAPS = {
     u'P45': 8,
     u'P55': 8,
 }
-
-
-class RacerEditor(ProxyDelegate):
-
-    fields = dict(
-        name=TextField('Name', proxy=True),
-        number=IntegerField('Número', proxy=True),
-        category=ChoiceField('Categoria', proxy=True),
-    )
 
 
 class Form(GladeDelegate):
@@ -126,7 +115,7 @@ class Form(GladeDelegate):
         self.hpaned1.set_position(550)
 
         # Categores
-        options = sorted([(c.name, c) for c in self.race.get_categories()])
+        options = sorted([(c.name, c.id) for c in self.race.get_categories()])
         self.category.prefill(options)
 
         # Lists

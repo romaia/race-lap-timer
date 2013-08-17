@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <requires lib="gtk+" version="2.24"/>
   <!-- interface-requires kiwiwidgets 0.0 -->
+  <requires lib="gtk+" version="2.24"/>
   <!-- interface-naming-policy project-wide -->
   <object class="GtkWindow" id="interface_ui">
-    <property name="width_request">1000</property>
+    <property name="width_request">900</property>
     <property name="height_request">600</property>
     <property name="border_width">6</property>
     <property name="window_position">center-always</property>
@@ -341,8 +341,8 @@
                         <child>
                           <object class="ProxyComboBox" id="category">
                             <property name="visible">True</property>
-                            <property name="data_type">object</property>
-                            <property name="model_attribute">category</property>
+                            <property name="data_type">int</property>
+                            <property name="model_attribute">category_id</property>
                           </object>
                           <packing>
                             <property name="left_attach">3</property>
