@@ -124,7 +124,7 @@ class Form(GladeDelegate):
             Column('number', title='Número', data_type=int),
             Column('completed_laps', title='Completas', data_type=int),
             Column('total_time', title='Tempo', data_type=str),
-            # Column('category_str', title="Categoria", data_type=str)
+            Column('category_str', title="Categoria", data_type=str)
         ])
 
         self.categories.set_columns([
@@ -144,11 +144,8 @@ class Form(GladeDelegate):
                               Column('remaining_laps', title="Falta", data_type=int),
                               ])
 
-        for category in self.race.get_categories():
-            self.racers.append(None, category)
         for racer in self.store.find(Racer):
-            self.racers.append(racer.category, racer)
-            self.racers.expand(racer.category)
+            self.racers.append(racer)
 
         self.log.extend(self.store.find(RacerLap))
         self.categories.extend(self.store.find(Category))
@@ -277,13 +274,14 @@ class Form(GladeDelegate):
             self.proxy = self.add_proxy(racer, self.widgets)
         self.proxy.set_model(racer)
         self.save_button.set_sensitive(True)
+        self.name.grab_focus()
 
     def save_racer(self):
         racer = self._current_model
         self.store.add(racer)
         self.racers.expand(racer.category)
         if self._is_new:
-            self.racers.append(racer.category, racer, select=True)
+            self.racers.append(racer, select=True)
 
         self.proxy.set_model(None)
         self.racer_field.set_sensitive(False)
