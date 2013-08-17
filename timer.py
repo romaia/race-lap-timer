@@ -9,7 +9,8 @@ import gtk
 import gobject
 import pango
 
-from kiwi.ui.delegates import GladeDelegate
+from kiwi.ui.delegates import GladeDelegate, ProxyDelegate
+from kiwi.ui.forms import TextField, IntegerField, ChoiceField
 from kiwi.ui.objectlist import Column  # , ObjectList
 
 from storm.database import create_database
@@ -17,9 +18,9 @@ from storm.store import Store
 
 from models import Racer, RacerLap, Category, Race
 
-import sys
-from storm.tracer import debug
-debug(True, stream=sys.stdout)
+# import sys
+# from storm.tracer import debug
+# debug(True, stream=sys.stdout)
 
 
 CATEGORIES = {
@@ -45,6 +46,15 @@ CATEGORIES_LAPS = {
     u'P45': 8,
     u'P55': 8,
 }
+
+
+class RacerEditor(ProxyDelegate):
+
+    fields = dict(
+        name=TextField('Name', proxy=True),
+        number=IntegerField('Número', proxy=True),
+        category=ChoiceField('Categoria', proxy=True),
+    )
 
 
 class Form(GladeDelegate):
@@ -112,7 +122,7 @@ class Form(GladeDelegate):
 
         # Lists
         self.racers.set_columns([
-            Column('name', title="Nome", expand=True, data_type=str, sorted=True),
+            Column('name', title="Nome", data_type=str, sorted=True),
             Column('number', title='Número', data_type=int),
             Column('completed_laps', title='Voltas', data_type=int),
             Column('total_time', title='Tempo', data_type=str),
@@ -154,6 +164,7 @@ class Form(GladeDelegate):
         # Show finishing categories in bold
         self.categories.set_cell_data_func(self._on_categories__cell_data_func)
         self.log.set_cell_data_func(self._on_log__cell_data_func)
+        self.racers.set_cell_data_func(self._on_racers__cell_data_func)
 
     def _on_categories__cell_data_func(self, column, renderer, category, text):
         if not isinstance(renderer, gtk.CellRendererText):
@@ -179,6 +190,35 @@ class Form(GladeDelegate):
 
     def _on_log__cell_data_func(self, column, renderer, racer_lap, text):
         if not isinstance(renderer, gtk.CellRendererText):
+            return text
+
+        remaining_laps = racer_lap.remaining_laps
+        last_lap = remaining_laps == 1
+        finished = remaining_laps == 0
+
+        renderer.set_property('weight-set', last_lap or finished)
+        renderer.set_property('background-set', last_lap or finished)
+        if last_lap or finished:
+            renderer.set_property('weight', pango.WEIGHT_BOLD)
+
+        if last_lap:
+            renderer.set_property('background', 'yellow')
+        elif finished:
+            renderer.set_property('background', 'green')
+
+        return text
+
+    def _on_racers__cell_data_func(self, column, renderer, racer, text):
+        if not isinstance(renderer, gtk.CellRendererText):
+            return text
+
+        renderer.set_property('weight-set', False)
+        renderer.set_property('background-set', False)
+        if not isinstance(racer, Racer):
+            return text
+
+        racer_lap = racer.last_lap
+        if not racer_lap:
             return text
 
         remaining_laps = racer_lap.remaining_laps
@@ -240,7 +280,10 @@ class Form(GladeDelegate):
         self.proxy.set_model(racer)
 
     def save_racer(self):
-        self.store.add(self._current_model)
+        racer = self._current_model
+        self.store.add(racer)
+        if self._is_new:
+            self.racers.append(racer.category, racer, select=True)
 
         self.proxy.set_model(None)
         self.racer_field.set_sensitive(False)
@@ -248,6 +291,7 @@ class Form(GladeDelegate):
         self.store.commit()
 
         self.racers.flush()
+        self._current_model = None
 
     #
     # Callbacks
@@ -273,25 +317,23 @@ class Form(GladeDelegate):
         widget.set_text('')
 
     def on_racers__row_activated(self, widget, row):
+        self._is_new = False
         if isinstance(row, Racer):
             self.edit_racer(row)
 
     def on_new_button__clicked(self, button):
+        self._is_new = True
         racer = Racer()
         racer.category = self.category.get_selected()
         racer.race = self.race
 
-        self.racers.append(racer.category, racer, select=True)
         self.edit_racer(racer)
 
     def on_save_button__clicked(self, button):
         self.save_racer()
 
-    def on_remove_button__clicked(self, button):
-        pass
-
 
 if __name__ == "__main__":
-    browser = Form()
-    browser.show_all()
+    window = Form()
+    window.show_all()
     gtk.main()
