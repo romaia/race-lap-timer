@@ -67,6 +67,10 @@ class Category(Storm):
     def update(self):
         self._complete_laps = None
 
+    @cached_property
+    def total_racers(self):
+        return Store.of(self).find(Racer, Racer.category == self).count()
+
     @property
     def is_last_lap(self):
         return self.completed_laps == (self.total_laps - 1)
