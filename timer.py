@@ -269,23 +269,26 @@ class Form(GladeDelegate):
 
     def edit_racer(self, racer):
         self._current_model = racer
-        self.racer_field.set_sensitive(True)
         if not self.proxy:
             self.proxy = self.add_proxy(racer, self.widgets)
         self.proxy.set_model(racer)
+
         self.save_button.set_sensitive(True)
+        self.new_button.set_sensitive(False)
+        self.racer_field.set_sensitive(True)
         self.name.grab_focus()
 
     def save_racer(self):
         racer = self._current_model
         self.store.add(racer)
-        self.racers.expand(racer.category)
         if self._is_new:
             self.racers.append(racer, select=True)
 
         self.proxy.set_model(None)
         self.racer_field.set_sensitive(False)
         self.save_button.set_sensitive(False)
+        self.new_button.set_sensitive(True)
+
         self.racers.refresh()
         self.store.commit()
 
