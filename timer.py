@@ -138,7 +138,7 @@ class Form(GladeDelegate):
         self.categories.set_columns([
             Column('short_name', title="Cat", data_type=str, sorted=True),
             Column('name', title="Category", data_type=str, expand=True),
-            Column('total_racers', title="Corredores", data_type=int),
+            Column('total_racers', title="Corredores", data_type=str),
             Column('completed_laps', title="Comp", data_type=int),
             Column('total_laps', title="Total", data_type=int)])
 

@@ -60,16 +60,26 @@ class Category(Storm):
     race_id = Int()
     race = Reference(race_id, 'Race.id')
 
-    # FIXME: workarount for treeview sorting
-    number = None
-    total_time = None
-
     def update(self):
         self._complete_laps = None
+        self._total_racers = None
 
-    @cached_property
+    @property
     def total_racers(self):
-        return Store.of(self).find(Racer, Racer.category == self).count()
+        if hasattr(self, '_total_racers') and self._total_racers is not None:
+            return self._total_racers
+
+        store = Store.of(self)
+        query = And(Racer.id == RacerLap.racer_id,
+                    Racer.category_id == self.id)
+        data = store.using(RacerLap, Racer).find((Count(1)), query)
+        data = list(data.group_by(Racer.category_id, Racer.id))
+
+        complete_racers = len([i for i in data if i == self.total_laps])
+        total_racers = Store.of(self).find(Racer, Racer.category == self).count()
+
+        self._total_racers = '%s / %s' % (complete_racers, total_racers)
+        return self._total_racers
 
     @property
     def is_last_lap(self):
