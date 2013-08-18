@@ -97,6 +97,14 @@ class Form(GladeDelegate):
             cat.total_laps = CATEGORIES_LAPS[short]
             self.store.add(cat)
 
+        #for i in range(200):
+        #    racer = Racer()
+        #    racer.name = unicode(i)
+        #    racer.number = i
+        #    racer.race = self.race
+        #    racer.category = cat
+        #    self.store.add(racer)
+
         self.store.commit()
 
     def setup_widgets(self):
@@ -362,6 +370,7 @@ class Form(GladeDelegate):
         racer.category.update()
         racer.update()
         self.categories.refresh(racer.category)
+        self.lap_number.grab_focus()
 
 
 if __name__ == "__main__":
